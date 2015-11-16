@@ -7,7 +7,13 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"time"
+	"io/ioutil"
+	"bytes"
+	"encoding/json"
+	"strings"
+	"fmt"
 
+	"github.com/grafana/grafana/pkg/log"
 	"github.com/grafana/grafana/pkg/api/cloudwatch"
 	"github.com/grafana/grafana/pkg/bus"
 	"github.com/grafana/grafana/pkg/metrics"
@@ -104,6 +110,45 @@ func ProxyDataSourceRequest(c *middleware.Context) {
 		proxyPath := c.Params("*")
 		proxy := NewReverseProxy(ds, proxyPath, targetUrl)
 		proxy.Transport = dataProxyTransport
+
+		contents, err := ioutil.ReadAll(c.Req.Request.Body)
+
+		if err != nil || len(contents) == 0 {
+			c.Req.Request.ParseForm()
+			form_values := c.Req.Request.Form
+			if contents, ok := form_values["q"]; ok {
+				log.Info("Metadata Query: %#v",contents)
+			}else{
+				c.JsonApiErr(500, "Unable to verify authorization", err)
+				return
+			}
+		}else{
+			c.Req.Request.Body = ioutil.NopCloser(bytes.NewReader(contents))
+
+			var v util.DynMap
+			err = json.Unmarshal(contents, &v)
+			if err != nil {
+				log.Info("Body: %s",contents)
+				c.JsonApiErr(500, "Unable to verify authorization", err)
+				return
+			}
+
+			for _,element := range v["queries"].([]interface{}) {
+				m := element.(map[string]interface {})
+				org_matches := strings.HasPrefix(m["metric"].(string),fmt.Sprintf("P%d.",c.SignedInUser.OrgId))
+				super_admin := c.SignedInUser.Login == setting.AdminUser
+				if !org_matches && !super_admin {
+					log.Info("Query: %+v",m)
+					log.Info("metric: %+v",m["metric"])
+					log.Info("org: %s",fmt.Sprintf("P%d.",c.SignedInUser.OrgId))
+					log.Info("admin: %s",fmt.Sprintf("P%d.",setting.AdminUser))
+					log.Info("login: %s",fmt.Sprintf("P%d.",c.SignedInUser.Login))
+					c.JsonApiErr(403, "Unauthorized Query", err)
+					return
+				}
+			}
+		}
+
 		proxy.ServeHTTP(c.Resp, c.Req.Request)
 		c.Resp.Header().Del("Set-Cookie")
 	}
