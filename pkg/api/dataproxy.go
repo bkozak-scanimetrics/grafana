@@ -78,6 +78,11 @@ func NewReverseProxy(ds *m.DataSource, proxyPath string, targetUrl *url.URL) *ht
 }
 
 func getDatasource(id int64, orgId int64) (*m.DataSource, error) {
+	// ds, exists := dsMap[id]
+	// if exists && ds.OrgId == orgId {
+	//	return ds, nil
+	// }
+
 	query := m.GetDataSourceByIdQuery{Id: id, OrgId: orgId}
 	if err := bus.Dispatch(&query); err != nil {
 		return nil, err
@@ -106,49 +111,87 @@ func ProxyDataSourceRequest(c *middleware.Context) {
 
 	if ds.Type == m.DS_CLOUDWATCH {
 		cloudwatch.HandleRequest(c, ds)
-	} else {
+	}else if ds.Type == m.DS_INFLUXDB {
 		proxyPath := c.Params("*")
 		proxy := NewReverseProxy(ds, proxyPath, targetUrl)
 		proxy.Transport = dataProxyTransport
 
-		contents, err := ioutil.ReadAll(c.Req.Request.Body)
-
-		if err != nil || len(contents) == 0 {
+		if !c.SignedInUser.Login == setting.AdminUser {
 			c.Req.Request.ParseForm()
 			form_values := c.Req.Request.Form
 			if contents, ok := form_values["q"]; ok {
-				log.Info("Metadata Query: %#v",contents)
-			}else{
-				c.JsonApiErr(500, "Unable to verify authorization", err)
-				return
-			}
-		}else{
-			c.Req.Request.Body = ioutil.NopCloser(bytes.NewReader(contents))
-
-			var v util.DynMap
-			err = json.Unmarshal(contents, &v)
-			if err != nil {
-				log.Info("Body: %s",contents)
-				c.JsonApiErr(500, "Unable to verify authorization", err)
-				return
-			}
-
-			for _,element := range v["queries"].([]interface{}) {
-				m := element.(map[string]interface {})
-				org_matches := strings.HasPrefix(m["metric"].(string),fmt.Sprintf("P%d.",c.SignedInUser.OrgId))
-				super_admin := c.SignedInUser.Login == setting.AdminUser
-				if !org_matches && !super_admin {
-					log.Info("Query: %+v",m)
-					log.Info("metric: %+v",m["metric"])
-					log.Info("org: %s",fmt.Sprintf("P%d.",c.SignedInUser.OrgId))
-					log.Info("admin: %s",fmt.Sprintf("P%d.",setting.AdminUser))
-					log.Info("login: %s",fmt.Sprintf("P%d.",c.SignedInUser.Login))
-					c.JsonApiErr(403, "Unauthorized Query", err)
+				queries,err := url.QueryUnescape(contents)
+				if err != nil {
+					c.JsonApiErr(500, "Unable to verify authorization", err)
 					return
+				}
+				for _,query := range strings.Split(queries,';'){
+					if strings.HasPrefix("SELECT", query){
+						if !strings.Contains(fmt.Sprintf("FROM P%d.",c.SignedInUser.OrgId),query){
+							c.JsonApiErr(403, "Unauthorized Query", nil)
+							return
+						}
+					}else{
+						log.Info("Metadata Query: %#v",query)
+					}
 				}
 			}
 		}
+		proxy.ServeHTTP(c.RW(), c.Req.Request)
+	}else if ds.Type == m.DS_OPENTSDB {
+		proxyPath := c.Params("*")
+		proxy := NewReverseProxy(ds, proxyPath, targetUrl)
+		proxy.Transport = dataProxyTransport
 
+		if !c.SignedInUser.Login == setting.AdminUser {
+
+			contents, err := ioutil.ReadAll(c.Req.Request.Body)
+
+			if err != nil || len(contents) == 0 {
+				c.Req.Request.ParseForm()
+				form_values := c.Req.Request.Form
+				if contents, ok := form_values["q"]; ok && !(strings.Contains(contents,"m=") || strings.Contains(contents,"tsuid=")){
+					log.Info("Metadata Query: %#v",contents)
+				}else{
+					c.JsonApiErr(500, "Unable to verify authorization", nil)
+					return
+				}
+			}else{
+				c.Req.Request.Body = ioutil.NopCloser(bytes.NewReader(contents))
+
+				var v util.DynMap
+				err = json.Unmarshal(contents, &v)
+				if err != nil {
+					log.Info("Body: %s",contents)
+					c.JsonApiErr(500, "Unable to verify authorization", err)
+					return
+				}
+
+				for _,element := range v["queries"].([]interface{}) {
+					m := element.(map[string]interface {})
+					org_matches := strings.HasPrefix(m["metric"].(string),fmt.Sprintf("P%d.",c.SignedInUser.OrgId))
+					if !org_matches || (m["tsuids"] != nil) {
+						c.JsonApiErr(403, "Unauthorized Query", nil)
+						return
+					}
+				}
+			}
+		}
+		proxy.ServeHTTP(c.Resp, c.Req.Request)
+	}else if ds.Type == m.DS_ES {
+		if !c.SignedInUser.Login == setting.AdminUser {
+			proxyPath := c.Params("*")
+			proxy := NewReverseProxy(ds, proxyPath, targetUrl)
+			proxy.Transport = dataProxyTransport
+			proxy.ServeHTTP(c.RW(), c.Req.Request)
+		}else{
+			c.JsonApiErr(403, "Unauthorized Query", nil)
+			return
+		}
+	} else {
+		proxyPath := c.Params("*")
+		proxy := NewReverseProxy(ds, proxyPath, targetUrl)
+		proxy.Transport = dataProxyTransport
 		proxy.ServeHTTP(c.Resp, c.Req.Request)
 		c.Resp.Header().Del("Set-Cookie")
 	}
