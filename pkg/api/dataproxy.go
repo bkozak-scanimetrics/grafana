@@ -137,7 +137,8 @@ func ProxyDataSourceRequest(c *middleware.Context) {
 				}
 			}
 		}
-		proxy.ServeHTTP(c.RW(), c.Req.Request)
+		proxy.ServeHTTP(c.Resp, c.Req.Request)
+		c.Resp.Header().Del("Set-Cookie")
 	}else if ds.Type == m.DS_OPENTSDB {
 		proxyPath := c.Params("*")
 		proxy := NewReverseProxy(ds, proxyPath, targetUrl)
@@ -178,12 +179,14 @@ func ProxyDataSourceRequest(c *middleware.Context) {
 			}
 		}
 		proxy.ServeHTTP(c.Resp, c.Req.Request)
+		c.Resp.Header().Del("Set-Cookie")
 	}else if ds.Type == m.DS_ES {
 		if !c.SignedInUser.Login == setting.AdminUser {
 			proxyPath := c.Params("*")
 			proxy := NewReverseProxy(ds, proxyPath, targetUrl)
 			proxy.Transport = dataProxyTransport
-			proxy.ServeHTTP(c.RW(), c.Req.Request)
+			proxy.ServeHTTP(c.Resp, c.Req.Request)
+			c.Resp.Header().Del("Set-Cookie")
 		}else{
 			c.JsonApiErr(403, "Unauthorized Query", nil)
 			return
