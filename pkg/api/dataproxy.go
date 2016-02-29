@@ -116,7 +116,7 @@ func ProxyDataSourceRequest(c *middleware.Context) {
 		proxy := NewReverseProxy(ds, proxyPath, targetUrl)
 		proxy.Transport = dataProxyTransport
 
-		if !c.SignedInUser.Login == setting.AdminUser {
+		if (c.SignedInUser.Login != setting.AdminUser) && (c.SignedInUser.OrgId != 1) {
 			c.Req.Request.ParseForm()
 			form_values := c.Req.Request.Form
 			if contents, ok := form_values["q"]; ok {
@@ -144,7 +144,7 @@ func ProxyDataSourceRequest(c *middleware.Context) {
 		proxy := NewReverseProxy(ds, proxyPath, targetUrl)
 		proxy.Transport = dataProxyTransport
 
-		if !c.SignedInUser.Login == setting.AdminUser {
+		if (c.SignedInUser.Login != setting.AdminUser) && (c.SignedInUser.OrgId != 1) {
 
 			contents, err := ioutil.ReadAll(c.Req.Request.Body)
 
@@ -181,7 +181,7 @@ func ProxyDataSourceRequest(c *middleware.Context) {
 		proxy.ServeHTTP(c.Resp, c.Req.Request)
 		c.Resp.Header().Del("Set-Cookie")
 	}else if ds.Type == m.DS_ES {
-		if !c.SignedInUser.Login == setting.AdminUser {
+		if (c.SignedInUser.Login == setting.AdminUser) || (c.SignedInUser.OrgId == 1) {
 			proxyPath := c.Params("*")
 			proxy := NewReverseProxy(ds, proxyPath, targetUrl)
 			proxy.Transport = dataProxyTransport
