@@ -120,14 +120,14 @@ func ProxyDataSourceRequest(c *middleware.Context) {
 			c.Req.Request.ParseForm()
 			form_values := c.Req.Request.Form
 			if contents, ok := form_values["q"]; ok {
-				queries,err := url.QueryUnescape(contents)
+				queries,err := url.QueryUnescape(strings.Join(contents,""))
 				if err != nil {
 					c.JsonApiErr(500, "Unable to verify authorization", err)
 					return
 				}
-				for _,query := range strings.Split(queries,';'){
-					if strings.HasPrefix("SELECT", query){
-						if !strings.Contains(fmt.Sprintf("FROM P%d.",c.SignedInUser.OrgId),query){
+				for _, query := range strings.Split(queries,";"){
+					if strings.HasPrefix(query, "SELECT"){
+						if !strings.Contains(query,fmt.Sprintf("FROM P%d.",c.SignedInUser.OrgId)){
 							c.JsonApiErr(403, "Unauthorized Query", nil)
 							return
 						}
@@ -135,6 +135,9 @@ func ProxyDataSourceRequest(c *middleware.Context) {
 						log.Info("Metadata Query: %#v",query)
 					}
 				}
+			}else{
+				c.JsonApiErr(500, "Unable to verify authorization", err)
+				return
 			}
 		}
 		proxy.ServeHTTP(c.Resp, c.Req.Request)
@@ -151,7 +154,7 @@ func ProxyDataSourceRequest(c *middleware.Context) {
 			if err != nil || len(contents) == 0 {
 				c.Req.Request.ParseForm()
 				form_values := c.Req.Request.Form
-				if contents, ok := form_values["q"]; ok && !(strings.Contains(contents,"m=") || strings.Contains(contents,"tsuid=")){
+				if contents, ok := form_values["q"]; ok && !(strings.Contains(strings.Join(contents,""),"m=") || strings.Contains(strings.Join(contents,""),"tsuid=")){
 					log.Info("Metadata Query: %#v",contents)
 				}else{
 					c.JsonApiErr(500, "Unable to verify authorization", nil)
