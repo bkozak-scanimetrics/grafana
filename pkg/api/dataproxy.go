@@ -125,9 +125,9 @@ func ProxyDataSourceRequest(c *middleware.Context) {
 					c.JsonApiErr(500, "Unable to verify authorization", err)
 					return
 				}
-				for _, query := range strings.Split(queries,";"){
+				for _, query := range strings.Split(strings.Replace(queries,";","\n",-1),"\n"){
 					if strings.HasPrefix(query, "SELECT"){
-						if !strings.Contains(query,fmt.Sprintf("FROM P%d.",c.SignedInUser.OrgId)){
+						if !strings.Contains(query,fmt.Sprintf("FROM \"P%d.",c.SignedInUser.OrgId)){
 							c.JsonApiErr(403, "Unauthorized Query", nil)
 							return
 						}
