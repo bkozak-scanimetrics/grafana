@@ -184,7 +184,7 @@ func ProxyDataSourceRequest(c *middleware.Context) {
 		proxy.ServeHTTP(c.Resp, c.Req.Request)
 		c.Resp.Header().Del("Set-Cookie")
 	}else if ds.Type == m.DS_ES {
-		if (c.SignedInUser.Login == setting.AdminUser) || (c.SignedInUser.OrgId == 1) {
+		if (c.SignedInUser.Login == setting.AdminUser) || (c.SignedInUser.OrgId == 1) || (ds.OrgId == c.SignedInUser.OrgId) {
 			proxyPath := c.Params("*")
 			proxy := NewReverseProxy(ds, proxyPath, targetUrl)
 			proxy.Transport = dataProxyTransport
