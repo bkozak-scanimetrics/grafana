@@ -30,6 +30,56 @@
   src: local('Open Sans Light'), local('OpenSans-Light'), url(../fonts/opensans/DXI1ORHCpsQm3Vp6mXoaTa-j2U0lmluP9RWlSytm3ho.woff2) format('woff2');
   unicode-range: U+0460-052F, U+20B4, U+2DE0-2DFF, U+A640-A69F;
 }
+
+.icon-gf-raintank_wordmark:before {
+    content: "MoteScan";
+    font-family: "Helvetica"
+}
+.icon-gf-raintank_icn:before {
+    content: "\e601";
+}
+.icon-gf-raintank_r-icn:before {
+    content: "\e905";
+}
+.icon-gf-check-alt:before {
+    content: "\e603";
+}
+.icon-gf-check:before {
+    content: "\e604";
+}
+.icon-gf-collector:before {
+    content: "\e605";
+}
+.icon-gf-dashboard:before {
+    content: "\e606";
+}
+.icon-gf-panel:before {
+    content: "\e904";
+}
+.icon-gf-datasources:before {
+    content: "\e607";
+}
+.icon-gf-endpoint-tiny:before {
+    content: "\e608";
+}
+.icon-gf-endpoint:before {
+    content: "\e609";
+}
+.icon-gf-filter:before {
+    content: "\e60a";
+}
+.icon-gf-status:before {
+    content: "\e60b";
+}
+.icon-gf-monitoring:before {
+    content: "\e60c";
+}
+.icon-gf-monitoring-tiny:before {
+    content: "\e620";
+}
+.icon-gf-jump-to-dashboard:before {
+    content: "\e60d";
+}
 /* cyrillic */
 @font-face {
   font-family: 'Open Sans';
@@ -301,4 +351,8 @@
   font-weight: 400;
   src: local('Open Sans Italic'), local('OpenSans-Italic'), url(../fonts/opensans/xjAJXh38I15wypJXxuGMBo4P5ICox8Kq3LLUNMylGO4.woff2) format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000;
+}
+.icon-gf-grafana_wordmark:before {
+    content: "MoteScan";
+    font-family: "Helvetica"
 }
