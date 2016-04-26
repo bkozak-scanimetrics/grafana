@@ -6,7 +6,7 @@ define([
   'app/core/utils/kbn',
   './graph_tooltip',
   'jquery.flot',
-  'jquery.flot.navigate',
+  'jquery.flot.selection',
   'jquery.flot.time',
   'jquery.flot.stack',
   'jquery.flot.stackpercent',
@@ -217,13 +217,9 @@ function (angular, $, moment, _, kbn, GraphTooltip) {
               color: '#c8c8c8',
               margin: { left: 0, right: 0 },
             },
-            zoom: {
-                interactive: true,
-                trigger: "dblclick",
-                amount: 1.5
-            },
-            pan: {
-                interactive: true
+            selection: {
+              mode: "x",
+              color: '#666'
             },
             crosshair: {
               mode: panel.tooltip.shared || dashboard.sharedCrosshair ? "x" : null
@@ -460,24 +456,14 @@ function (angular, $, moment, _, kbn, GraphTooltip) {
           return sortedSeries;
         });
 
-        elem.bind("plotpan", function (event, ranges) {
+        elem.bind("plotselected", function (event, ranges) {
           scope.$apply(function() {
             timeSrv.setTime({
-              from  : moment.utc(parseFloat(ranges.getAxes().xaxis.min.toFixed(4))).toDate(),
-              to    : moment.utc(parseFloat(ranges.getAxes().xaxis.max.toFixed(4))).toDate(),
+              from  : moment.utc(ranges.xaxis.from),
+              to    : moment.utc(ranges.xaxis.to),
             });
           });
         });
-
-        elem.bind("plotzoom", function (event, ranges) {
-          scope.$apply(function() {
-            timeSrv.setTime({
-              from  : moment.utc(parseFloat(ranges.getAxes().xaxis.min.toFixed(4))).toDate(),
-              to    : moment.utc(parseFloat(ranges.getAxes().xaxis.max.toFixed(4))).toDate(),
-            });
-          });
-        });
-
       }
     };
   });
