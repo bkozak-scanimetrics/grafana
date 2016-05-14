@@ -8,8 +8,8 @@
 	"Deps": [
                 {
 			"ImportPath": "github.com/influxdata/influxdb",
-			"Comment": "v0.10.3",
-			"Rev": "f55169eaca706f78e2d66edb0b8e62861712a747"
+			"Comment": "v0.13.0",
+			"Rev": "e57fb88a051ee40fd9277094345fbd47bb4783ce"
 		},
 		{
 			"ImportPath": "github.com/BurntSushi/toml",

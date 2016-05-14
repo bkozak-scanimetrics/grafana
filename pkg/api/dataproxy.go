@@ -188,7 +188,7 @@ func ProxyDataSourceRequest(c *middleware.Context) {
 							log.Warn("Unauthed SELECT INTO Query: %#v",s.String())
 							return
 						}
-						for indx,source := range stmt.SourceNames() {
+						for indx,source := range stmt.Sources.Names() {
 							regex := stmt.Sources[indx].(*influxql.Measurement).Regex
 							if regex != nil {
 								regex := regex.Val
