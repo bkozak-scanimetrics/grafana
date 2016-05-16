@@ -7,6 +7,10 @@
 	],
 	"Deps": [
                 {
+                        "ImportPath": "github.com/gogo/protobuf/proto",
+                        "Rev": "74b6e9deaff6ba6da1389ec97351d337f0d08b06"
+                },
+                {
 			"ImportPath": "github.com/influxdata/influxdb",
 			"Comment": "v0.13.0",
 			"Rev": "e57fb88a051ee40fd9277094345fbd47bb4783ce"
