@@ -12,8 +12,8 @@
                 },
                 {
 			"ImportPath": "github.com/influxdata/influxdb",
-			"Comment": "v0.13.0",
-			"Rev": "e57fb88a051ee40fd9277094345fbd47bb4783ce"
+			"Comment": "v1.0.0",
+			"Rev": "37992377a55fbc138b2c01edd4deffed64b53989"
 		},
 		{
 			"ImportPath": "github.com/BurntSushi/toml",
